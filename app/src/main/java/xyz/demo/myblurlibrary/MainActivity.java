@@ -36,9 +36,16 @@ public class MainActivity extends Activity {
             startActivity(new Intent(this, XmlDemoActivity.class));
         });
         
+        Button musicButton = new Button(this);
+        musicButton.setText("Open Music Demo");
+        musicButton.setOnClickListener(v -> {
+            startActivity(new Intent(this, DemoMusicActivity.class));
+        });
+        
         layout.addView(button);
         layout.addView(navButton);
         layout.addView(xmlButton);
+        layout.addView(musicButton);
         setContentView(layout);
     }
 }

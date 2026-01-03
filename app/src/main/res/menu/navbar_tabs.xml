@@ -2,26 +2,26 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/tab_home"
-        android:icon="@android:drawable/ic_menu_compass"
+        android:icon="@drawable/outline_home_24"
         android:title="Home" />
     
     <item
         android:id="@+id/tab_search"
-        android:icon="@android:drawable/ic_menu_search"
+        android:icon="@drawable/outline_search_24"
         android:title="Search" />
     
     <item
         android:id="@+id/tab_add"
-        android:icon="@android:drawable/ic_menu_add"
+        android:icon="@drawable/outline_history_24"
         android:title="Add" />
     
     <item
         android:id="@+id/tab_gallery"
-        android:icon="@android:drawable/ic_menu_gallery"
+        android:icon="@drawable/outline_schedule_24"
         android:title="Gallery" />
     
     <item
         android:id="@+id/tab_settings"
-        android:icon="@android:drawable/ic_menu_preferences"
+        android:icon="@drawable/outline_settings_24"
         android:title="Settings" />
 </menu>

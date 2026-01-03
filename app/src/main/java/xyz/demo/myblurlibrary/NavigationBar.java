@@ -61,10 +61,10 @@ public class NavigationBar extends FrameLayout {
     private float[] radii = new float[8];
     
     // Styling
-    private int backgroundColor = 0x4D1E1E1E; // Dark semi-transparent
-    private int activeBackgroundColor = 0xB0CDDC39; // Yellow-green with 70% opacity
+    private int backgroundColor = 0x50000000; // Dark semi-transparent (50% black)
+    private int activeBackgroundColor = 0x40FFFFFF; // White with 25% opacity
     private int inactiveIconColor = 0xFFFFFFFF; // White
-    private int activeIconColor = 0xFF000000; // Black
+    private int activeIconColor = 0xFFFFFFFF; // White
     private float cornerRadius = 100f; // Pill shape
     private int badgeBackgroundColor = 0xFFFF0000; // Red
     private int badgeTextColor = 0xFFFFFFFF; // White
@@ -156,28 +156,13 @@ public class NavigationBar extends FrameLayout {
         int paddingV = context.getResources().getDimensionPixelSize(R.dimen.navbar_padding_vertical);
         tabContainer.setPadding(paddingH, paddingV, paddingH, paddingV);
         
-        // Add tab container to this FrameLayout first
+        // Add tab container to this FrameLayout
         FrameLayout.LayoutParams containerParams = new FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.WRAP_CONTENT,
             FrameLayout.LayoutParams.WRAP_CONTENT
         );
         containerParams.gravity = Gravity.CENTER;
         addView(tabContainer, containerParams);
-        
-        // Create animated indicator (add after tabs so it's on top)
-        animatedIndicator = new View(context);
-        int iconSize = context.getResources().getDimensionPixelSize(R.dimen.navbar_tab_icon_size);
-        android.graphics.drawable.GradientDrawable indicatorBg = new android.graphics.drawable.GradientDrawable();
-        indicatorBg.setColor(activeBackgroundColor);
-        float circularRadius = context.getResources().getDimension(R.dimen.navbar_tab_circular_radius);
-        indicatorBg.setCornerRadius(circularRadius);
-        animatedIndicator.setBackground(indicatorBg);
-        animatedIndicator.setVisibility(INVISIBLE); // Hidden until tabs are added
-        animatedIndicator.setElevation(dp(-1)); // Place behind icons but above background
-        
-        FrameLayout.LayoutParams indicatorParams = new FrameLayout.LayoutParams(iconSize, iconSize);
-        indicatorParams.gravity = Gravity.CENTER_VERTICAL | Gravity.START;
-        addView(animatedIndicator, indicatorParams);
         
         setWillNotDraw(false);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && blurEnabled) {
@@ -366,8 +351,8 @@ public class NavigationBar extends FrameLayout {
         int oldIndex = activeTabIndex;
         activeTabIndex = position;
         
-        // Animate indicator to new position
-        animateIndicatorToTab(oldIndex, position);
+        // Update all tab states
+        updateTabStates();
         
         // Notify listener
         if (listener != null && oldIndex != activeTabIndex) {
@@ -752,23 +737,25 @@ public class NavigationBar extends FrameLayout {
     }
     
     private void createTabView(NavigationTab tab, int position) {
-        FrameLayout tabView = new FrameLayout(getContext());
+        LinearLayout tabView = new LinearLayout(getContext());
+        tabView.setOrientation(LinearLayout.VERTICAL);
+        tabView.setGravity(Gravity.CENTER);
         tabView.setClipChildren(false);
         tabView.setClipToPadding(false);
+        int padding = dp(15);
+        tabView.setPadding(padding, dp(8), padding, dp(8));
         
-        // Icon container with background
+        // Icon container
         FrameLayout iconContainer = new FrameLayout(getContext());
         iconContainer.setId(View.generateViewId());
         
         // Icon
         ImageView icon = new ImageView(getContext());
         icon.setImageResource(tab.iconRes);
-        icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-        int iconPadding = getContext().getResources().getDimensionPixelSize(R.dimen.navbar_tab_icon_padding);
-        icon.setPadding(iconPadding, iconPadding, iconPadding, iconPadding);
+        icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
         
-        // Center icon in container
-        int iconSize = getContext().getResources().getDimensionPixelSize(R.dimen.navbar_tab_icon_size);
+        // Icon size
+        int iconSize = dp(25);
         FrameLayout.LayoutParams iconParams = new FrameLayout.LayoutParams(iconSize, iconSize);
         iconParams.gravity = Gravity.CENTER;
         iconContainer.addView(icon, iconParams);
@@ -781,16 +768,37 @@ public class NavigationBar extends FrameLayout {
                 FrameLayout.LayoutParams.WRAP_CONTENT
             );
             badgeParams.gravity = Gravity.TOP | Gravity.END;
-            badgeParams.setMargins(0, dp(4), dp(4), 0);
+            badgeParams.setMargins(0, dp(0), dp(0), 0);
             iconContainer.addView(badge, badgeParams);
         }
         
         tabView.addView(iconContainer);
         
+        // Add label text below icon
+        TextView label = new TextView(getContext());
+        label.setText(tab.label);
+        label.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 10);
+        label.setGravity(Gravity.CENTER);
+        label.setSingleLine(true);
+        label.setMaxWidth(dp(80));
+        // Apply OpenSans Regular font
+        try {
+            android.graphics.Typeface typeface = androidx.core.content.res.ResourcesCompat.getFont(getContext(), R.font.opensans_regular);
+            label.setTypeface(typeface);
+        } catch (Exception e) {
+            // Fallback to default if font fails to load
+            e.printStackTrace();
+        }
+        LinearLayout.LayoutParams labelParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        labelParams.topMargin = dp(4);
+        tabView.addView(label, labelParams);
+        
         // Click listener
         tabView.setOnClickListener(v -> {
             if (tab.enabled) {
-                animateTab(position);
                 setActiveTab(position);
             }
         });
@@ -799,20 +807,13 @@ public class NavigationBar extends FrameLayout {
             LinearLayout.LayoutParams.WRAP_CONTENT, 
             LinearLayout.LayoutParams.WRAP_CONTENT
         );
-        int tabMargin = getContext().getResources().getDimensionPixelSize(R.dimen.navbar_tab_margin);
-        params.setMargins(tabMargin, 0, tabMargin, 0);
+        params.setMargins(0, 0, 0, 0);
         tabContainer.addView(tabView, params);
         
-        // Position indicator on first tab
+        // Update tab states after first tab is added
         if (position == 0 && tabContainer.getChildCount() == 1) {
             tabContainer.post(() -> {
                 if (tabContainer.getChildCount() > 0) {
-                    float centerX = getTabCenterX(0);
-                    int indicatorIconSize = getContext().getResources().getDimensionPixelSize(R.dimen.navbar_tab_icon_size);
-                    FrameLayout.LayoutParams indicatorParams = (FrameLayout.LayoutParams) animatedIndicator.getLayoutParams();
-                    indicatorParams.leftMargin = (int) (centerX - indicatorIconSize / 2);
-                    animatedIndicator.setLayoutParams(indicatorParams);
-                    animatedIndicator.setVisibility(VISIBLE);
                     updateTabStates();
                 }
             });
@@ -823,21 +824,18 @@ public class NavigationBar extends FrameLayout {
         TextView badge = new TextView(getContext());
         badge.setText(count > 99 ? "99+" : String.valueOf(count));
         badge.setTextColor(badgeTextColor);
-        badge.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, 
-            getContext().getResources().getDimension(R.dimen.badge_text_size));
+        badge.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 9);
         badge.setGravity(Gravity.CENTER);
-        int paddingH = getContext().getResources().getDimensionPixelSize(R.dimen.badge_padding_horizontal);
-        int paddingV = getContext().getResources().getDimensionPixelSize(R.dimen.badge_padding_vertical);
-        badge.setPadding(paddingH, paddingV, paddingH, paddingV);
-        int minSize = getContext().getResources().getDimensionPixelSize(R.dimen.badge_min_size);
+        int padding = dp(3);
+        badge.setPadding(padding, dp(1), padding, dp(1));
+        int minSize = dp(16);
         badge.setMinWidth(minSize);
         badge.setMinHeight(minSize);
         
         // Rounded background
         android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
         bg.setColor(badgeBackgroundColor);
-        float cornerRadius = getContext().getResources().getDimension(R.dimen.badge_corner_radius);
-        bg.setCornerRadius(cornerRadius);
+        bg.setCornerRadius(dp(8));
         badge.setBackground(bg);
         
         return badge;
@@ -916,7 +914,7 @@ public class NavigationBar extends FrameLayout {
     
     private void updateTabView(int position) {
         if (position >= 0 && position < tabContainer.getChildCount()) {
-            FrameLayout tabView = (FrameLayout) tabContainer.getChildAt(position);
+            LinearLayout tabView = (LinearLayout) tabContainer.getChildAt(position);
             FrameLayout iconContainer = (FrameLayout) tabView.getChildAt(0);
             
             // Update badge
@@ -944,31 +942,31 @@ public class NavigationBar extends FrameLayout {
     
     private void updateTabState(int position) {
         if (position >= 0 && position < tabContainer.getChildCount()) {
-            FrameLayout tabView = (FrameLayout) tabContainer.getChildAt(position);
+            LinearLayout tabView = (LinearLayout) tabContainer.getChildAt(position);
             FrameLayout iconContainer = (FrameLayout) tabView.getChildAt(0);
             ImageView icon = (ImageView) iconContainer.getChildAt(0);
+            TextView label = (TextView) tabView.getChildAt(1);
             NavigationTab tab = tabs.get(position);
             
             boolean isActive = position == activeTabIndex;
             
-            // Ensure consistent size for all tabs
-            int iconSize = getContext().getResources().getDimensionPixelSize(R.dimen.navbar_tab_icon_size);
-            ViewGroup.LayoutParams params = iconContainer.getLayoutParams();
-            if (params == null) {
-                params = new FrameLayout.LayoutParams(iconSize, iconSize);
+            // Add glass effect with stroke to active tab
+            if (isActive) {
+                android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
+                bg.setColor(0x40FFFFFF); // Brighter white background (25% opacity) for better visibility
+                bg.setCornerRadius(dp(25)); // Rounded pill shape
+                bg.setStroke(dp(1), 0x60FFFFFF); // Brighter glass stroke border (38% opacity)
+                tabView.setBackground(bg);
             } else {
-                params.width = iconSize;
-                params.height = iconSize;
+                tabView.setBackground(null);
             }
-            iconContainer.setLayoutParams(params);
             
-            // No background on individual tabs (indicator handles this)
-            iconContainer.setBackground(null);
-            
-            // Update icon color
-            icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-            icon.setColorFilter(isActive ? activeIconColor : inactiveIconColor, 
+            // Update icon color - selected tab is always white
+            icon.setColorFilter(isActive ? 0xFFFFFFFF : inactiveIconColor, 
                 android.graphics.PorterDuff.Mode.SRC_IN);
+            
+            // Update label color - selected tab is always white
+            label.setTextColor(isActive ? 0xFFFFFFFF : inactiveIconColor);
             
             // Update enabled state
             tabView.setAlpha(tab.enabled ? 1f : 0.4f);

@@ -133,13 +133,13 @@ public class NavDemoActivity extends Activity {
         navigationBar.setCornerRadius(100f); // Pill shape
         navigationBar.setBlurEnabled(true);
         
-        // Add tabs (using android built-in icons)
+        // Add tabs (using same icons as navbar_tabs.xml)
         navigationBar
-            .addTab(android.R.drawable.ic_menu_compass, "Home")
-            .addTab(android.R.drawable.ic_menu_agenda, "Library")
-            .addTab(android.R.drawable.ic_menu_rotate, "Recent")
-            .addTab(android.R.drawable.ic_menu_save, "Saved")
-            .addTab(android.R.drawable.ic_menu_preferences, "Settings");
+            .addTab(R.drawable.outline_home_24, "Home")
+            .addTab(R.drawable.outline_search_24, "Library")
+            .addTab(R.drawable.outline_history_24, "Recent")
+            .addTab(R.drawable.outline_schedule_24, "Saved")
+            .addTab(R.drawable.outline_settings_24, "Settings");
         
         // Set initial badges
         navigationBar.setBadge(1, 5);  // Library has 5 notifications
