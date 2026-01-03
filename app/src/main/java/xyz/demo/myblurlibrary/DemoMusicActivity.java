@@ -20,7 +20,9 @@ import androidx.annotation.RequiresApi;
  */
 public class DemoMusicActivity extends Activity {
 
+    private NavBarContainer navBarContainer;
     private NavigationBar navigationBar;
+    private MiniPlayer miniPlayer;
     private FrameLayout contentFrame;
     private FrameLayout rootLayout;
     
@@ -53,22 +55,119 @@ public class DemoMusicActivity extends Activity {
         // Show home content initially
         showHomeContent();
         
-        // Create NavigationBar
-        createNavigationBar(rootLayout);
+        // Add animated gradient views behind navbar for blur visualization
+        addBackgroundGradients(rootLayout);
+        
+        // Create unified navbar container with blur
+        createNavBarContainer(rootLayout);
         
         setContentView(rootLayout);
     }
     
-    @RequiresApi(api = Build.VERSION_CODES.S)
-    private void createNavigationBar(FrameLayout root) {
-        navigationBar = new NavigationBar(this);
+    private void addBackgroundGradients(FrameLayout root) {
+        // Gradient 1 - Purple to Pink
+        View gradient1 = new View(this);
+        android.graphics.drawable.GradientDrawable grad1 = new android.graphics.drawable.GradientDrawable(
+            android.graphics.drawable.GradientDrawable.Orientation.TL_BR,
+            new int[]{0xFF9C27B0, 0xFFE91E63}
+        );
+        grad1.setCornerRadius(dp(20));
+        gradient1.setBackground(grad1);
+        FrameLayout.LayoutParams params1 = new FrameLayout.LayoutParams(dp(200), dp(150));
+        params1.gravity = Gravity.BOTTOM | Gravity.START;
+        params1.setMargins(dp(20), 0, 0, dp(20));
+        root.addView(gradient1, params1);
         
-        // Configure styling - dark theme with glass effect
-        navigationBar.setNavBarBackgroundColor(0x80000000); // Semi-transparent black
-        navigationBar.setInactiveIconColor(0xFFAAAAAA); // Gray
-        navigationBar.setActiveIconColor(0xFFFFFFFF); // White
-        navigationBar.setCornerRadius(100f); // Pill shape
-        navigationBar.setBlurEnabled(true);
+        // Gradient 2 - Blue to Cyan
+        View gradient2 = new View(this);
+        android.graphics.drawable.GradientDrawable grad2 = new android.graphics.drawable.GradientDrawable(
+            android.graphics.drawable.GradientDrawable.Orientation.BR_TL,
+            new int[]{0xFF2196F3, 0xFF00BCD4}
+        );
+        grad2.setCornerRadius(dp(20));
+        gradient2.setBackground(grad2);
+        FrameLayout.LayoutParams params2 = new FrameLayout.LayoutParams(dp(180), dp(120));
+        params2.gravity = Gravity.BOTTOM | Gravity.END;
+        params2.setMargins(0, 0, dp(20), dp(50));
+        root.addView(gradient2, params2);
+        
+        // Gradient 3 - Orange to Red
+        View gradient3 = new View(this);
+        android.graphics.drawable.GradientDrawable grad3 = new android.graphics.drawable.GradientDrawable(
+            android.graphics.drawable.GradientDrawable.Orientation.LEFT_RIGHT,
+            new int[]{0xFFFF9800, 0xFFF44336}
+        );
+        grad3.setCornerRadius(dp(20));
+        gradient3.setBackground(grad3);
+        FrameLayout.LayoutParams params3 = new FrameLayout.LayoutParams(dp(150), dp(100));
+        params3.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+        params3.setMargins(0, 0, 0, dp(10));
+        root.addView(gradient3, params3);
+        
+        // Animate gradients
+        gradient1.animate()
+            .rotation(360f)
+            .setDuration(20000)
+            .setInterpolator(new android.view.animation.LinearInterpolator())
+            .setListener(new android.animation.Animator.AnimatorListener() {
+                @Override
+                public void onAnimationStart(android.animation.Animator animation) {}
+                @Override
+                public void onAnimationEnd(android.animation.Animator animation) {
+                    gradient1.setRotation(0);
+                    gradient1.animate()
+                        .rotation(360f)
+                        .setDuration(20000)
+                        .setInterpolator(new android.view.animation.LinearInterpolator())
+                        .start();
+                }
+                @Override
+                public void onAnimationCancel(android.animation.Animator animation) {}
+                @Override
+                public void onAnimationRepeat(android.animation.Animator animation) {}
+            })
+            .start();
+        
+        gradient2.animate()
+            .scaleX(1.2f).scaleY(1.2f)
+            .setDuration(3000)
+            .setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator())
+            .withEndAction(() -> {
+                gradient2.animate()
+                    .scaleX(1f).scaleY(1f)
+                    .setDuration(3000)
+                    .setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator())
+                    .start();
+            })
+            .start();
+        
+        gradient3.animate()
+            .translationY(-dp(20))
+            .setDuration(2000)
+            .setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator())
+            .withEndAction(() -> {
+                gradient3.animate()
+                    .translationY(0)
+                    .setDuration(2000)
+                    .setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator())
+                    .start();
+            })
+            .start();
+    }
+    
+    @RequiresApi(api = Build.VERSION_CODES.S)
+    private void createNavBarContainer(FrameLayout root) {
+        // Create container with blur
+        navBarContainer = new NavBarContainer(this);
+        navBarContainer.setNavBarBackgroundColor(0x80000000);
+        
+        // Create NavigationBar (without its own blur)
+        navigationBar = new NavigationBar(this);
+        navigationBar.setBlurEnabled(false); // Container handles blur
+        navigationBar.setNavBarBackgroundColor(0x00000000); // Transparent
+        navigationBar.setInactiveIconColor(0xFFAAAAAA);
+        navigationBar.setActiveIconColor(0xFFFFFFFF);
+        navigationBar.setCornerRadius(25f);
         
         // Add music app tabs
         navigationBar
@@ -99,14 +198,50 @@ public class DemoMusicActivity extends Activity {
             }
         });
         
-        // Position navbar at bottom
-        FrameLayout.LayoutParams navbarParams = new FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.WRAP_CONTENT,
+        // Create MiniPlayer (without its own blur)
+        miniPlayer = new MiniPlayer(this);
+        miniPlayer.setBlurEnabled(false); // Container handles blur
+        miniPlayer.setBackgroundColor(0x00000000); // Transparent
+        miniPlayer.setCornerRadius(25f);
+        miniPlayer.setSongInfo("Summer Vibes", "Chill Artists");
+        miniPlayer.setAlbumArtColor(0xFF1DB954);
+        
+        // Set listener
+        miniPlayer.setOnMiniPlayerListener(new MiniPlayer.OnMiniPlayerListener() {
+            @Override
+            public void onPlayPause(boolean isPlaying) {
+                Toast.makeText(DemoMusicActivity.this, 
+                    isPlaying ? "Playing" : "Paused", Toast.LENGTH_SHORT).show();
+            }
+            
+            @Override
+            public void onPrevious() {
+                Toast.makeText(DemoMusicActivity.this, "Previous", Toast.LENGTH_SHORT).show();
+            }
+            
+            @Override
+            public void onNext() {
+                Toast.makeText(DemoMusicActivity.this, "Next", Toast.LENGTH_SHORT).show();
+            }
+            
+            @Override
+            public void onMiniPlayerClick() {
+                Toast.makeText(DemoMusicActivity.this, "Open Full Player", Toast.LENGTH_SHORT).show();
+            }
+        });
+        
+        // Add components to container
+        navBarContainer.setMiniPlayer(miniPlayer);
+        navBarContainer.setNavigationBar(navigationBar);
+        
+        // Position container at bottom
+        FrameLayout.LayoutParams containerParams = new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.WRAP_CONTENT
         );
-        navbarParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-        navbarParams.setMargins(dp(16), 0, dp(16), dp(24));
-        root.addView(navigationBar, navbarParams);
+        containerParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+        containerParams.setMargins(dp(16), 0, dp(16), dp(24));
+        root.addView(navBarContainer, containerParams);
     }
     
     private void showHomeContent() {
@@ -123,13 +258,13 @@ public class DemoMusicActivity extends Activity {
         
         // Recently Played section
         content.addView(createSectionTitle("Recently Played"));
-        content.addView(createMusicCard("Summer Vibes", "Playlist • 24 songs", 0xFF1DB954));
-        content.addView(createMusicCard("Chill Beats", "Playlist • 38 songs", 0xFF2196F3));
+        content.addView(createMusicCard("Summer Vibes", "Playlist • 24 songs", 0xFF1DB954, true));
+        content.addView(createMusicCard("Chill Beats", "Playlist • 38 songs", 0xFF2196F3, false));
         
         // Recommended section
         content.addView(createSectionTitle("Recommended for You"));
-        content.addView(createMusicCard("Rock Classics", "Playlist • 50 songs", 0xFFE91E63));
-        content.addView(createMusicCard("Jazz Evening", "Playlist • 42 songs", 0xFFFF9800));
+        content.addView(createMusicCard("Rock Classics", "Playlist • 50 songs", 0xFFE91E63, false));
+        content.addView(createMusicCard("Jazz Evening", "Playlist • 42 songs", 0xFFFF9800, false));
         
         scrollView.addView(content);
         contentFrame.addView(scrollView);
@@ -243,7 +378,7 @@ public class DemoMusicActivity extends Activity {
         return section;
     }
     
-    private View createMusicCard(String title, String subtitle, int color) {
+    private View createMusicCard(String title, String subtitle, int color, boolean showPlayButton) {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.HORIZONTAL);
         card.setPadding(dp(16), dp(16), dp(16), dp(16));
@@ -287,9 +422,55 @@ public class DemoMusicActivity extends Activity {
         subtitleText.setTextColor(0xFFAAAAAA);
         textContainer.addView(subtitleText);
         
-        card.addView(textContainer);
+        LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(
+            0, LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        textParams.weight = 1;
+        card.addView(textContainer, textParams);
+        
+        // Add play button if needed
+        if (showPlayButton) {
+            ImageView playButton = new ImageView(this);
+            playButton.setImageResource(android.R.drawable.ic_media_play);
+            playButton.setColorFilter(Color.WHITE);
+            playButton.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            playButton.setPadding(dp(8), dp(8), dp(8), dp(8));
+            
+            android.graphics.drawable.GradientDrawable playBg = new android.graphics.drawable.GradientDrawable();
+            playBg.setColor(0xFF1DB954);
+            playBg.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+            playButton.setBackground(playBg);
+            
+            LinearLayout.LayoutParams playParams = new LinearLayout.LayoutParams(dp(48), dp(48));
+            playParams.gravity = Gravity.CENTER_VERTICAL;
+            card.addView(playButton, playParams);
+            
+            // Click listener to toggle mini player
+            playButton.setOnClickListener(v -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    toggleMiniPlayer(title, subtitle, color);
+                }
+            });
+        }
         
         return card;
+    }
+    
+    @RequiresApi(api = Build.VERSION_CODES.S)
+    private void toggleMiniPlayer(String songTitle, String artist, int albumColor) {
+        if (navBarContainer.isMiniPlayerVisible()) {
+            navBarContainer.hideMiniPlayer();
+        } else {
+            miniPlayer.setSongInfo(songTitle, artist);
+            miniPlayer.setAlbumArtColor(albumColor);
+            miniPlayer.setPlaying(true);
+            navBarContainer.showMiniPlayer();
+        }
+    }
+    
+    // Overloaded method for backward compatibility
+    private View createMusicCard(String title, String subtitle, int color) {
+        return createMusicCard(title, subtitle, color, false);
     }
     
     private View createSearchCategory(String emoji, String text) {
