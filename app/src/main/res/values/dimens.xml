@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- NavigationBar Dimensions -->
+    <dimen name="navbar_tab_icon_size">@dimen/_48sdp</dimen>
+    <dimen name="navbar_tab_icon_padding">@dimen/_10sdp</dimen>
+    <dimen name="navbar_tab_circular_radius">@dimen/_24sdp</dimen>
+    <dimen name="navbar_padding_horizontal">@dimen/_8sdp</dimen>
+    <dimen name="navbar_padding_vertical">@dimen/_6sdp</dimen>
+    <dimen name="navbar_tab_margin">@dimen/_2sdp</dimen>
+    <dimen name="navbar_corner_radius_pill">@dimen/_100sdp</dimen>
+    <dimen name="navbar_stroke_width_top">@dimen/_1sdp</dimen>
+    <dimen name="navbar_stroke_width_bottom">@dimen/_1sdp</dimen>
+    
+    <!-- Badge Dimensions -->
+    <dimen name="badge_min_size">@dimen/_18sdp</dimen>
+    <dimen name="badge_padding_horizontal">@dimen/_4sdp</dimen>
+    <dimen name="badge_padding_vertical">@dimen/_2sdp</dimen>
+    <dimen name="badge_corner_radius">@dimen/_9sdp</dimen>
+    <dimen name="badge_margin_top">@dimen/_4sdp</dimen>
+    <dimen name="badge_margin_end">@dimen/_4sdp</dimen>
+    <dimen name="badge_text_size">@dimen/_10sdp</dimen>
+    
+    <!-- Demo Activity Dimensions -->
+    <dimen name="demo_content_padding">@dimen/_16sdp</dimen>
+    <dimen name="demo_bottom_padding">@dimen/_120sdp</dimen>
+    <dimen name="demo_navbar_margin">@dimen/_16sdp</dimen>
+    <dimen name="demo_button_padding_horizontal">@dimen/_16sdp</dimen>
+    <dimen name="demo_button_padding_vertical">@dimen/_12sdp</dimen>
+    <dimen name="demo_button_margin_bottom">@dimen/_8sdp</dimen>
+    <dimen name="demo_section_padding_top">@dimen/_16sdp</dimen>
+    <dimen name="demo_section_padding_bottom">@dimen/_8sdp</dimen>
+    <dimen name="demo_theme_button_padding">@dimen/_12sdp</dimen>
+    <dimen name="demo_theme_button_margin">@dimen/_4sdp</dimen>
+    
+    <!-- Gradient Visualization Dimensions -->
+    <dimen name="gradient_height">@dimen/_120sdp</dimen>
+    <dimen name="gradient_corner_radius">@dimen/_20sdp</dimen>
+    <dimen name="gradient_margin_bottom">@dimen/_12sdp</dimen>
+    <dimen name="gradient_label_margin_top">@dimen/_8sdp</dimen>
+    
+    <!-- Text Sizes -->
+    <dimen name="text_size_title">@dimen/_24sdp</dimen>
+    <dimen name="text_size_section_title">@dimen/_18sdp</dimen>
+    <dimen name="text_size_subtitle">@dimen/_18sdp</dimen>
+    <dimen name="text_size_body">@dimen/_16sdp</dimen>
+    <dimen name="text_size_small">@dimen/_14sdp</dimen>
+    <dimen name="text_size_tiny">@dimen/_12sdp</dimen>
+    
+    <!-- BlurDemoActivity Dimensions -->
+    <dimen name="blur_demo_corner_radius">@dimen/_24sdp</dimen>
+    <dimen name="blur_demo_container_padding">@dimen/_16sdp</dimen>
+    <dimen name="blur_demo_container_padding_vertical">@dimen/_12sdp</dimen>
+    <dimen name="blur_demo_button_padding">@dimen/_12sdp</dimen>
+    <dimen name="blur_demo_button_margin">@dimen/_8sdp</dimen>
+    <dimen name="blur_demo_list_bottom_padding">@dimen/_100sdp</dimen>
+    <dimen name="blur_demo_navbar_margin">@dimen/_16sdp</dimen>
+    <dimen name="blur_demo_item_padding">@dimen/_16sdp</dimen>
+    <dimen name="blur_demo_image_max_height">@dimen/_300sdp</dimen>
+    <dimen name="blur_demo_image_margin">@dimen/_32sdp</dimen>
+</resources>

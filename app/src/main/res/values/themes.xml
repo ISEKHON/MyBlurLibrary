@@ -1,0 +1,18 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.MyBlurLibrary" parent="Theme.Material3.DynamicColors.DayNight.NoActionBar">
+        <!-- Customize your light theme here. -->
+        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+    </style>
+
+    <style name="Theme.MyBlurLibrary" parent="Base.Theme.MyBlurLibrary" />
+    
+    <!-- NoActionBar theme for full-screen activities -->
+    <style name="Theme.MyBlurLibrary.NoActionBar" parent="Theme.MyBlurLibrary">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
+</resources>
