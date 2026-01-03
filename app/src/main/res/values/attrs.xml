@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- NavigationBar Custom Attributes -->
+    <declare-styleable name="NavigationBar">
+        <!-- Background color for the navbar -->
+        <attr name="navBarBackgroundColor" format="color" />
+        
+        <!-- Active tab background color -->
+        <attr name="activeBackgroundColor" format="color" />
+        
+        <!-- Inactive icon color -->
+        <attr name="inactiveIconColor" format="color" />
+        
+        <!-- Active icon color -->
+        <attr name="activeIconColor" format="color" />
+        
+        <!-- Corner radius for pill shape -->
+        <attr name="cornerRadius" format="dimension" />
+        
+        <!-- Badge background color -->
+        <attr name="badgeBackgroundColor" format="color" />
+        
+        <!-- Badge text color -->
+        <attr name="badgeTextColor" format="color" />
+        
+        <!-- Enable/disable blur effect -->
+        <attr name="blurEnabled" format="boolean" />
+        
+        <!-- Animation curve type -->
+        <attr name="animationCurve" format="enum">
+            <enum name="linear" value="0" />
+            <enum name="accelerate" value="1" />
+            <enum name="decelerate" value="2" />
+            <enum name="accelerateDecelerate" value="3" />
+            <enum name="overshoot" value="4" />
+            <enum name="anticipate" value="5" />
+            <enum name="anticipateOvershoot" value="6" />
+            <enum name="bounce" value="7" />
+            <enum name="elastic" value="8" />
+        </attr>
+        
+        <!-- Animation duration in milliseconds -->
+        <attr name="animationDuration" format="integer" />
+        
+        <!-- Menu resource to inflate tabs from -->
+        <attr name="menu" format="reference" />
+    </declare-styleable>
+</resources>

@@ -205,6 +205,121 @@ public class NavDemoActivity extends Activity {
         rowParams.setMargins(0, 0, 0, dp(16));
         demoContent.addView(themeButtonRow, rowParams);
         
+        // Section: Animation Curves
+        addSectionTitle("Animation Curves", isDarkMode);
+        
+        // Row 1: Linear, Accelerate, Decelerate
+        LinearLayout animRow1 = new LinearLayout(this);
+        animRow1.setOrientation(LinearLayout.HORIZONTAL);
+        animRow1.setGravity(Gravity.CENTER);
+        
+        Button linearBtn = createAnimButton("Linear", isDarkMode);
+        linearBtn.setOnClickListener(v -> {
+            navigationBar.setAnimationCurve(NavigationBar.AnimationCurve.LINEAR);
+            showToast("Animation: Linear");
+        });
+        
+        Button accelBtn = createAnimButton("Accelerate", isDarkMode);
+        accelBtn.setOnClickListener(v -> {
+            navigationBar.setAnimationCurve(NavigationBar.AnimationCurve.ACCELERATE);
+            showToast("Animation: Accelerate");
+        });
+        
+        Button decelBtn = createAnimButton("Decelerate", isDarkMode);
+        decelBtn.setOnClickListener(v -> {
+            navigationBar.setAnimationCurve(NavigationBar.AnimationCurve.DECELERATE);
+            showToast("Animation: Decelerate");
+        });
+        
+        animRow1.addView(linearBtn, btnParams);
+        animRow1.addView(accelBtn, btnParams);
+        animRow1.addView(decelBtn, btnParams);
+        demoContent.addView(animRow1);
+        
+        // Row 2: AccelDecel, Overshoot, Anticipate
+        LinearLayout animRow2 = new LinearLayout(this);
+        animRow2.setOrientation(LinearLayout.HORIZONTAL);
+        animRow2.setGravity(Gravity.CENTER);
+        
+        Button accelDecelBtn = createAnimButton("Accel Decel", isDarkMode);
+        accelDecelBtn.setOnClickListener(v -> {
+            navigationBar.setAnimationCurve(NavigationBar.AnimationCurve.ACCELERATE_DECELERATE);
+            showToast("Animation: Accelerate Decelerate");
+        });
+        
+        Button overshootBtn = createAnimButton("Overshoot", isDarkMode);
+        overshootBtn.setOnClickListener(v -> {
+            navigationBar.setAnimationCurve(NavigationBar.AnimationCurve.OVERSHOOT);
+            showToast("Animation: Overshoot (Default)");
+        });
+        
+        Button anticipateBtn = createAnimButton("Anticipate", isDarkMode);
+        anticipateBtn.setOnClickListener(v -> {
+            navigationBar.setAnimationCurve(NavigationBar.AnimationCurve.ANTICIPATE);
+            showToast("Animation: Anticipate");
+        });
+        
+        animRow2.addView(accelDecelBtn, btnParams);
+        animRow2.addView(overshootBtn, btnParams);
+        animRow2.addView(anticipateBtn, btnParams);
+        demoContent.addView(animRow2);
+        
+        // Row 3: Anticipate Overshoot, Bounce, Elastic
+        LinearLayout animRow3 = new LinearLayout(this);
+        animRow3.setOrientation(LinearLayout.HORIZONTAL);
+        animRow3.setGravity(Gravity.CENTER);
+        
+        Button anticipateOverBtn = createAnimButton("Antic Over", isDarkMode);
+        anticipateOverBtn.setOnClickListener(v -> {
+            navigationBar.setAnimationCurve(NavigationBar.AnimationCurve.ANTICIPATE_OVERSHOOT);
+            showToast("Animation: Anticipate Overshoot");
+        });
+        
+        Button bounceBtn = createAnimButton("Bounce", isDarkMode);
+        bounceBtn.setOnClickListener(v -> {
+            navigationBar.setAnimationCurve(NavigationBar.AnimationCurve.BOUNCE);
+            showToast("Animation: Bounce");
+        });
+        
+        Button elasticBtn = createAnimButton("Elastic", isDarkMode);
+        elasticBtn.setOnClickListener(v -> {
+            navigationBar.setAnimationCurve(NavigationBar.AnimationCurve.ELASTIC);
+            showToast("Animation: Elastic");
+        });
+        
+        animRow3.addView(anticipateOverBtn, btnParams);
+        animRow3.addView(bounceBtn, btnParams);
+        animRow3.addView(elasticBtn, btnParams);
+        demoContent.addView(animRow3);
+        
+        // Animation Duration Control
+        LinearLayout durationRow = new LinearLayout(this);
+        durationRow.setOrientation(LinearLayout.HORIZONTAL);
+        durationRow.setGravity(Gravity.CENTER);
+        
+        Button fastBtn = createAnimButton("Fast (200ms)", isDarkMode);
+        fastBtn.setOnClickListener(v -> {
+            navigationBar.setAnimationDuration(200);
+            showToast("Duration: 200ms");
+        });
+        
+        Button normalBtn = createAnimButton("Normal (400ms)", isDarkMode);
+        normalBtn.setOnClickListener(v -> {
+            navigationBar.setAnimationDuration(400);
+            showToast("Duration: 400ms");
+        });
+        
+        Button slowBtn = createAnimButton("Slow (700ms)", isDarkMode);
+        slowBtn.setOnClickListener(v -> {
+            navigationBar.setAnimationDuration(700);
+            showToast("Duration: 700ms");
+        });
+        
+        durationRow.addView(fastBtn, btnParams);
+        durationRow.addView(normalBtn, btnParams);
+        durationRow.addView(slowBtn, btnParams);
+        demoContent.addView(durationRow);
+        
         // Section: Tab Management
         addSectionTitle("Tab Management", isDarkMode);
         
@@ -532,6 +647,16 @@ public class NavDemoActivity extends Activity {
         button.setTextColor(Color.WHITE);
         button.setBackgroundColor(isDarkMode ? 0x40FFFFFF : 0x40000000);
         button.setPadding(dp(12), dp(10), dp(12), dp(10));
+        return button;
+    }
+    
+    private Button createAnimButton(String text, boolean isDarkMode) {
+        Button button = new Button(this);
+        button.setText(text);
+        button.setTextSize(10);
+        button.setTextColor(isDarkMode ? Color.WHITE : Color.BLACK);
+        button.setBackgroundColor(isDarkMode ? 0x30CDDC39 : 0x304CAF50);
+        button.setPadding(dp(4), dp(8), dp(4), dp(8));
         return button;
     }
     

@@ -29,11 +29,30 @@ public class NavigationBar extends FrameLayout {
     
     private static final int MAX_TABS = 5;
     
+    /**
+     * Animation curve types for tab transitions
+     */
+    public enum AnimationCurve {
+        LINEAR,
+        ACCELERATE,
+        DECELERATE,
+        ACCELERATE_DECELERATE,
+        OVERSHOOT,
+        ANTICIPATE,
+        ANTICIPATE_OVERSHOOT,
+        BOUNCE,
+        ELASTIC
+    }
+    
     private LinearLayout tabContainer;
+    private View animatedIndicator; // Animated circular indicator
+    private android.animation.ValueAnimator indicatorAnimator;
     private List<NavigationTab> tabs = new ArrayList<>();
     private int activeTabIndex = 0;
     private OnTabSelectedListener listener;
     private boolean blurEnabled = true;
+    private AnimationCurve animationCurve = AnimationCurve.OVERSHOOT;
+    private long animationDuration = 400;
     
     // Blur components
     private DownscaleScrollableNoiseSuppressor noiseSuppressor;
@@ -74,15 +93,44 @@ public class NavigationBar extends FrameLayout {
     
     public NavigationBar(Context context, AttributeSet attrs) {
         super(context, attrs);
-        init(context);
+        init(context, attrs);
     }
     
     public NavigationBar(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init(context);
+        init(context, attrs);
     }
     
     private void init(Context context) {
+        init(context, null);
+    }
+    
+    private void init(Context context, AttributeSet attrs) {
+        // Parse XML attributes if provided
+        if (attrs != null) {
+            android.content.res.TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.NavigationBar);
+            
+            backgroundColor = a.getColor(R.styleable.NavigationBar_navBarBackgroundColor, backgroundColor);
+            activeBackgroundColor = a.getColor(R.styleable.NavigationBar_activeBackgroundColor, activeBackgroundColor);
+            inactiveIconColor = a.getColor(R.styleable.NavigationBar_inactiveIconColor, inactiveIconColor);
+            activeIconColor = a.getColor(R.styleable.NavigationBar_activeIconColor, activeIconColor);
+            cornerRadius = a.getDimension(R.styleable.NavigationBar_cornerRadius, cornerRadius);
+            badgeBackgroundColor = a.getColor(R.styleable.NavigationBar_badgeBackgroundColor, badgeBackgroundColor);
+            badgeTextColor = a.getColor(R.styleable.NavigationBar_badgeTextColor, badgeTextColor);
+            blurEnabled = a.getBoolean(R.styleable.NavigationBar_blurEnabled, blurEnabled);
+            animationDuration = a.getInteger(R.styleable.NavigationBar_animationDuration, (int) animationDuration);
+            
+            int curveIndex = a.getInt(R.styleable.NavigationBar_animationCurve, 4); // Default to OVERSHOOT
+            animationCurve = AnimationCurve.values()[curveIndex];
+            
+            // Inflate menu if provided
+            int menuRes = a.getResourceId(R.styleable.NavigationBar_menu, 0);
+            if (menuRes != 0) {
+                post(() -> inflateMenu(menuRes));
+            }
+            
+            a.recycle();
+        }
         // Initialize blur components
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             noiseSuppressor = new DownscaleScrollableNoiseSuppressor();
@@ -108,13 +156,28 @@ public class NavigationBar extends FrameLayout {
         int paddingV = context.getResources().getDimensionPixelSize(R.dimen.navbar_padding_vertical);
         tabContainer.setPadding(paddingH, paddingV, paddingH, paddingV);
         
-        // Add tab container to this FrameLayout
+        // Add tab container to this FrameLayout first
         FrameLayout.LayoutParams containerParams = new FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.WRAP_CONTENT,
             FrameLayout.LayoutParams.WRAP_CONTENT
         );
         containerParams.gravity = Gravity.CENTER;
         addView(tabContainer, containerParams);
+        
+        // Create animated indicator (add after tabs so it's on top)
+        animatedIndicator = new View(context);
+        int iconSize = context.getResources().getDimensionPixelSize(R.dimen.navbar_tab_icon_size);
+        android.graphics.drawable.GradientDrawable indicatorBg = new android.graphics.drawable.GradientDrawable();
+        indicatorBg.setColor(activeBackgroundColor);
+        float circularRadius = context.getResources().getDimension(R.dimen.navbar_tab_circular_radius);
+        indicatorBg.setCornerRadius(circularRadius);
+        animatedIndicator.setBackground(indicatorBg);
+        animatedIndicator.setVisibility(INVISIBLE); // Hidden until tabs are added
+        animatedIndicator.setElevation(dp(-1)); // Place behind icons but above background
+        
+        FrameLayout.LayoutParams indicatorParams = new FrameLayout.LayoutParams(iconSize, iconSize);
+        indicatorParams.gravity = Gravity.CENTER_VERTICAL | Gravity.START;
+        addView(animatedIndicator, indicatorParams);
         
         setWillNotDraw(false);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && blurEnabled) {
@@ -157,7 +220,8 @@ public class NavigationBar extends FrameLayout {
         try {
             android.graphics.RecordingCanvas recordingCanvas = noiseSuppressor.beginRecordingRect(0);
             recordingCanvas.save();
-            recordingCanvas.translate(-getLeft(), -getTop());
+            // Account for translation (visual position vs layout position)
+            recordingCanvas.translate(-getLeft() - getTranslationX(), -getTop() - getTranslationY());
             
             View parent = (View) getParent();
             if (parent != null) {
@@ -302,8 +366,8 @@ public class NavigationBar extends FrameLayout {
         int oldIndex = activeTabIndex;
         activeTabIndex = position;
         
-        // Update UI
-        updateTabStates();
+        // Animate indicator to new position
+        animateIndicatorToTab(oldIndex, position);
         
         // Notify listener
         if (listener != null && oldIndex != activeTabIndex) {
@@ -427,6 +491,64 @@ public class NavigationBar extends FrameLayout {
     }
     
     /**
+     * Sets the animation curve for tab transitions
+     */
+    public NavigationBar setAnimationCurve(AnimationCurve curve) {
+        this.animationCurve = curve;
+        return this;
+    }
+    
+    /**
+     * Gets the current animation curve
+     */
+    public AnimationCurve getAnimationCurve() {
+        return animationCurve;
+    }
+    
+    /**
+     * Sets the animation duration in milliseconds
+     */
+    public NavigationBar setAnimationDuration(long duration) {
+        this.animationDuration = duration;
+        return this;
+    }
+    
+    /**
+     * Gets the animation duration
+     */
+    public long getAnimationDuration() {
+        return animationDuration;
+    }
+    
+    /**
+     * Gets the interpolator for the current animation curve
+     */
+    private android.view.animation.Interpolator getInterpolator() {
+        switch (animationCurve) {
+            case LINEAR:
+                return new android.view.animation.LinearInterpolator();
+            case ACCELERATE:
+                return new android.view.animation.AccelerateInterpolator(1.5f);
+            case DECELERATE:
+                return new android.view.animation.DecelerateInterpolator(1.5f);
+            case ACCELERATE_DECELERATE:
+                return new android.view.animation.AccelerateDecelerateInterpolator();
+            case OVERSHOOT:
+                return new android.view.animation.OvershootInterpolator(1.5f);
+            case ANTICIPATE:
+                return new android.view.animation.AnticipateInterpolator(2.0f);
+            case ANTICIPATE_OVERSHOOT:
+                return new android.view.animation.AnticipateOvershootInterpolator(2.0f);
+            case BOUNCE:
+                return new android.view.animation.BounceInterpolator();
+            case ELASTIC:
+                return new android.view.animation.OvershootInterpolator(3.0f);
+            default:
+                return new android.view.animation.OvershootInterpolator(1.5f);
+        }
+    }
+    
+    /**
      * Sets background color for the navbar
      */
     public NavigationBar setNavBarBackgroundColor(int color) {
@@ -440,6 +562,15 @@ public class NavigationBar extends FrameLayout {
      */
     public NavigationBar setActiveBackgroundColor(int color) {
         this.activeBackgroundColor = color;
+        if (animatedIndicator != null) {
+            android.graphics.drawable.GradientDrawable indicatorBg = 
+                new android.graphics.drawable.GradientDrawable();
+            indicatorBg.setColor(activeBackgroundColor);
+            float circularRadius = getContext().getResources().getDimension(
+                R.dimen.navbar_tab_circular_radius);
+            indicatorBg.setCornerRadius(circularRadius);
+            animatedIndicator.setBackground(indicatorBg);
+        }
         updateTabStates();
         return this;
     }
@@ -481,6 +612,108 @@ public class NavigationBar extends FrameLayout {
         this.badgeBackgroundColor = backgroundColor;
         this.badgeTextColor = textColor;
         rebuildTabs();
+        return this;
+    }
+    
+    /**
+     * Inflates tabs from a menu resource
+     */
+    public NavigationBar inflateMenu(int menuRes) {
+        android.view.MenuInflater inflater = new android.view.MenuInflater(getContext());
+        android.view.Menu menu = new android.view.Menu() {
+            private java.util.ArrayList<android.view.MenuItem> items = new java.util.ArrayList<>();
+            
+            @Override
+            public android.view.MenuItem add(CharSequence title) {
+                return add(0, 0, 0, title);
+            }
+            
+            @Override
+            public android.view.MenuItem add(int titleRes) {
+                return add(0, 0, 0, titleRes);
+            }
+            
+            @Override
+            public android.view.MenuItem add(int groupId, int itemId, int order, CharSequence title) {
+                android.view.MenuItem item = new MenuItemImpl(itemId, title);
+                items.add(item);
+                return item;
+            }
+            
+            @Override
+            public android.view.MenuItem add(int groupId, int itemId, int order, int titleRes) {
+                return add(groupId, itemId, order, getContext().getString(titleRes));
+            }
+            
+            @Override
+            public android.view.SubMenu addSubMenu(CharSequence title) { return null; }
+            @Override
+            public android.view.SubMenu addSubMenu(int titleRes) { return null; }
+            @Override
+            public android.view.SubMenu addSubMenu(int groupId, int itemId, int order, CharSequence title) { return null; }
+            @Override
+            public android.view.SubMenu addSubMenu(int groupId, int itemId, int order, int titleRes) { return null; }
+            @Override
+            public int addIntentOptions(int groupId, int itemId, int order, android.content.ComponentName caller, android.content.Intent[] specifics, android.content.Intent intent, int flags, android.view.MenuItem[] outSpecificItems) { return 0; }
+            @Override
+            public void removeItem(int id) {}
+            @Override
+            public void removeGroup(int groupId) {}
+            @Override
+            public void clear() { items.clear(); }
+            @Override
+            public void setGroupCheckable(int group, boolean checkable, boolean exclusive) {}
+            @Override
+            public void setGroupVisible(int group, boolean visible) {}
+            @Override
+            public void setGroupEnabled(int group, boolean enabled) {}
+            @Override
+            public boolean hasVisibleItems() { return !items.isEmpty(); }
+            @Override
+            public android.view.MenuItem findItem(int id) {
+                for (android.view.MenuItem item : items) {
+                    if (item.getItemId() == id) return item;
+                }
+                return null;
+            }
+            @Override
+            public int size() { return items.size(); }
+            @Override
+            public android.view.MenuItem getItem(int index) { return items.get(index); }
+            @Override
+            public void close() {}
+            @Override
+            public boolean performShortcut(int keyCode, android.view.KeyEvent event, int flags) { return false; }
+            @Override
+            public boolean isShortcutKey(int keyCode, android.view.KeyEvent event) { return false; }
+            @Override
+            public boolean performIdentifierAction(int id, int flags) { return false; }
+            @Override
+            public void setQwertyMode(boolean isQwerty) {}
+        };
+        
+        inflater.inflate(menuRes, menu);
+        
+        // Add tabs from menu items
+        for (int i = 0; i < menu.size() && i < MAX_TABS; i++) {
+            android.view.MenuItem item = menu.getItem(i);
+            MenuItemImpl menuItem = (MenuItemImpl) item;
+            if (menuItem.iconRes != 0) {
+                addTab(menuItem.iconRes, item.getTitle() != null ? item.getTitle().toString() : "");
+            }
+        }
+        
+        // Reset blur render nodes after tabs are added (critical for XML inflation)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && blurEnabled && noiseSuppressor != null) {
+            post(() -> {
+                // Force blur to reinitialize with correct dimensions
+                if (noiseSuppressor.getRenderNodesCount() > 0) {
+                    noiseSuppressor.setupRenderNodes(new java.util.ArrayList<>(), 0);
+                }
+                invalidate();
+            });
+        }
+        
         return this;
     }
     
@@ -570,7 +803,20 @@ public class NavigationBar extends FrameLayout {
         params.setMargins(tabMargin, 0, tabMargin, 0);
         tabContainer.addView(tabView, params);
         
-        updateTabState(position);
+        // Position indicator on first tab
+        if (position == 0 && tabContainer.getChildCount() == 1) {
+            tabContainer.post(() -> {
+                if (tabContainer.getChildCount() > 0) {
+                    float centerX = getTabCenterX(0);
+                    int indicatorIconSize = getContext().getResources().getDimensionPixelSize(R.dimen.navbar_tab_icon_size);
+                    FrameLayout.LayoutParams indicatorParams = (FrameLayout.LayoutParams) animatedIndicator.getLayoutParams();
+                    indicatorParams.leftMargin = (int) (centerX - indicatorIconSize / 2);
+                    animatedIndicator.setLayoutParams(indicatorParams);
+                    animatedIndicator.setVisibility(VISIBLE);
+                    updateTabStates();
+                }
+            });
+        }
     }
     
     private TextView createBadgeView(int count) {
@@ -601,6 +847,71 @@ public class NavigationBar extends FrameLayout {
         for (int i = 0; i < tabs.size(); i++) {
             updateTabState(i);
         }
+    }
+    
+    private void animateIndicatorToTab(int fromPosition, int toPosition) {
+        if (tabContainer.getChildCount() == 0 || toPosition >= tabContainer.getChildCount()) {
+            return;
+        }
+        
+        // Cancel any running animation
+        if (indicatorAnimator != null && indicatorAnimator.isRunning()) {
+            indicatorAnimator.cancel();
+        }
+        
+        // Make indicator visible
+        if (animatedIndicator.getVisibility() != VISIBLE) {
+            animatedIndicator.setVisibility(VISIBLE);
+        }
+        
+        View fromTab = fromPosition >= 0 && fromPosition < tabContainer.getChildCount() 
+            ? tabContainer.getChildAt(fromPosition) : null;
+        View toTab = tabContainer.getChildAt(toPosition);
+        
+        // Calculate positions
+        float startX = fromTab != null ? getTabCenterX(fromPosition) : getTabCenterX(toPosition);
+        float endX = getTabCenterX(toPosition);
+        
+        // Update icon colors immediately
+        updateTabStates();
+        
+        // Animate with selected curve
+        indicatorAnimator = android.animation.ValueAnimator.ofFloat(startX, endX);
+        indicatorAnimator.setDuration(animationDuration);
+        indicatorAnimator.setInterpolator(getInterpolator());
+        indicatorAnimator.addUpdateListener(animation -> {
+            float x = (float) animation.getAnimatedValue();
+            FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) animatedIndicator.getLayoutParams();
+            int iconSize = getContext().getResources().getDimensionPixelSize(R.dimen.navbar_tab_icon_size);
+            params.leftMargin = (int) (x - iconSize / 2);
+            animatedIndicator.setLayoutParams(params);
+        });
+        
+        // Add scale animation for smooth effect
+        android.animation.ObjectAnimator scaleX = android.animation.ObjectAnimator.ofFloat(
+            animatedIndicator, "scaleX", 1f, 1.15f, 1f);
+        android.animation.ObjectAnimator scaleY = android.animation.ObjectAnimator.ofFloat(
+            animatedIndicator, "scaleY", 1f, 1.15f, 1f);
+        
+        android.animation.AnimatorSet animatorSet = new android.animation.AnimatorSet();
+        animatorSet.playTogether(indicatorAnimator, scaleX, scaleY);
+        animatorSet.start();
+    }
+    
+    private float getTabCenterX(int position) {
+        if (position < 0 || position >= tabContainer.getChildCount()) {
+            return 0;
+        }
+        
+        View tabView = tabContainer.getChildAt(position);
+        
+        // Calculate tab center relative to this NavigationBar
+        float tabCenterX = tabView.getLeft() + tabView.getWidth() / 2f;
+        
+        // Add tab container's offset
+        tabCenterX += tabContainer.getLeft();
+        
+        return tabCenterX;
     }
     
     private void updateTabView(int position) {
@@ -640,43 +951,24 @@ public class NavigationBar extends FrameLayout {
             
             boolean isActive = position == activeTabIndex;
             
-            // Update background and size
-            if (isActive) {
-                // Make container circular by setting fixed square dimensions
-                int iconSize = getContext().getResources().getDimensionPixelSize(R.dimen.navbar_tab_icon_size);
-                ViewGroup.LayoutParams params = iconContainer.getLayoutParams();
-                if (params == null) {
-                    params = new FrameLayout.LayoutParams(iconSize, iconSize);
-                } else {
-                    params.width = iconSize;
-                    params.height = iconSize;
-                }
-                iconContainer.setLayoutParams(params);
-                
-                // Circular background
-                android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
-                bg.setColor(activeBackgroundColor);
-                float circularRadius = getContext().getResources().getDimension(R.dimen.navbar_tab_circular_radius);
-                bg.setCornerRadius(circularRadius);
-                iconContainer.setBackground(bg);
-                
-                // Center icon
-                icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-                icon.setColorFilter(activeIconColor, android.graphics.PorterDuff.Mode.SRC_IN);
+            // Ensure consistent size for all tabs
+            int iconSize = getContext().getResources().getDimensionPixelSize(R.dimen.navbar_tab_icon_size);
+            ViewGroup.LayoutParams params = iconContainer.getLayoutParams();
+            if (params == null) {
+                params = new FrameLayout.LayoutParams(iconSize, iconSize);
             } else {
-                // Reset to wrap content for inactive tabs
-                int iconSize = getContext().getResources().getDimensionPixelSize(R.dimen.navbar_tab_icon_size);
-                ViewGroup.LayoutParams params = iconContainer.getLayoutParams();
-                if (params != null) {
-                    params.width = iconSize;
-                    params.height = iconSize;
-                    iconContainer.setLayoutParams(params);
-                }
-                
-                iconContainer.setBackground(null);
-                icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-                icon.setColorFilter(inactiveIconColor, android.graphics.PorterDuff.Mode.SRC_IN);
+                params.width = iconSize;
+                params.height = iconSize;
             }
+            iconContainer.setLayoutParams(params);
+            
+            // No background on individual tabs (indicator handles this)
+            iconContainer.setBackground(null);
+            
+            // Update icon color
+            icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+            icon.setColorFilter(isActive ? activeIconColor : inactiveIconColor, 
+                android.graphics.PorterDuff.Mode.SRC_IN);
             
             // Update enabled state
             tabView.setAlpha(tab.enabled ? 1f : 0.4f);
@@ -697,5 +989,78 @@ public class NavigationBar extends FrameLayout {
     
     private float dpf(float value) {
         return value * getResources().getDisplayMetrics().density;
+    }
+    
+    /**
+     * Simple MenuItem implementation for menu inflation
+     */
+    private static class MenuItemImpl implements android.view.MenuItem {
+        private int itemId;
+        private CharSequence title;
+        int iconRes;
+        
+        MenuItemImpl(int itemId, CharSequence title) {
+            this.itemId = itemId;
+            this.title = title;
+        }
+        
+        @Override public int getItemId() { return itemId; }
+        @Override public CharSequence getTitle() { return title; }
+        @Override public android.view.MenuItem setTitle(CharSequence title) { this.title = title; return this; }
+        @Override public android.view.MenuItem setTitle(int title) { return this; }
+        @Override public android.graphics.drawable.Drawable getIcon() { return null; }
+        @Override public android.view.MenuItem setIcon(android.graphics.drawable.Drawable icon) { return this; }
+        @Override 
+        public android.view.MenuItem setIcon(int iconRes) { 
+            this.iconRes = iconRes; 
+            return this; 
+        }
+        @Override public int getGroupId() { return 0; }
+        @Override public int getOrder() { return 0; }
+        @Override public android.view.MenuItem setCheckable(boolean checkable) { return this; }
+        @Override public boolean isCheckable() { return false; }
+        @Override public android.view.MenuItem setChecked(boolean checked) { return this; }
+        @Override public boolean isChecked() { return false; }
+        @Override public android.view.MenuItem setVisible(boolean visible) { return this; }
+        @Override public boolean isVisible() { return true; }
+        @Override public android.view.MenuItem setEnabled(boolean enabled) { return this; }
+        @Override public boolean isEnabled() { return true; }
+        @Override public boolean hasSubMenu() { return false; }
+        @Override public android.view.SubMenu getSubMenu() { return null; }
+        @Override public android.view.MenuItem setOnMenuItemClickListener(OnMenuItemClickListener menuItemClickListener) { return this; }
+        @Override public android.view.ContextMenu.ContextMenuInfo getMenuInfo() { return null; }
+        @Override public void setShowAsAction(int actionEnum) {}
+        @Override public android.view.MenuItem setShowAsActionFlags(int actionEnum) { return this; }
+        @Override public android.view.MenuItem setActionView(android.view.View view) { return this; }
+        @Override public android.view.MenuItem setActionView(int resId) { return this; }
+        @Override public android.view.View getActionView() { return null; }
+        @Override public android.view.MenuItem setActionProvider(android.view.ActionProvider actionProvider) { return this; }
+        @Override public android.view.ActionProvider getActionProvider() { return null; }
+        @Override public boolean expandActionView() { return false; }
+        @Override public boolean collapseActionView() { return false; }
+        @Override public boolean isActionViewExpanded() { return false; }
+        @Override public android.view.MenuItem setOnActionExpandListener(OnActionExpandListener listener) { return this; }
+        @Override public android.view.MenuItem setIntent(android.content.Intent intent) { return this; }
+        @Override public android.content.Intent getIntent() { return null; }
+        @Override public android.view.MenuItem setShortcut(char numericChar, char alphaChar) { return this; }
+        @Override public android.view.MenuItem setNumericShortcut(char numericChar) { return this; }
+        @Override public char getNumericShortcut() { return 0; }
+        @Override public android.view.MenuItem setAlphabeticShortcut(char alphaChar) { return this; }
+        @Override public char getAlphabeticShortcut() { return 0; }
+        @Override public android.view.MenuItem setAlphabeticShortcut(char alphaChar, int modifiers) { return this; }
+        @Override public int getAlphabeticModifiers() { return 0; }
+        @Override public android.view.MenuItem setNumericShortcut(char numericChar, int modifiers) { return this; }
+        @Override public int getNumericModifiers() { return 0; }
+        @Override public android.view.MenuItem setShortcut(char numericChar, char alphaChar, int numericModifiers, int alphaModifiers) { return this; }
+        @Override public CharSequence getTitleCondensed() { return title; }
+        @Override public android.view.MenuItem setTitleCondensed(CharSequence title) { return this; }
+        @Override public android.view.MenuItem setIconTintList(android.content.res.ColorStateList tint) { return this; }
+        @Override public android.content.res.ColorStateList getIconTintList() { return null; }
+        @Override public android.view.MenuItem setIconTintMode(android.graphics.PorterDuff.Mode tintMode) { return this; }
+        @Override public android.graphics.PorterDuff.Mode getIconTintMode() { return null; }
+        @Override public android.view.MenuItem setTooltipText(CharSequence tooltipText) { return this; }
+        @Override public CharSequence getTooltipText() { return null; }
+        @Override public android.view.MenuItem setContentDescription(CharSequence contentDescription) { return this; }
+        @Override public CharSequence getContentDescription() { return null; }
     }
 }

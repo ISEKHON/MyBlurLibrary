@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground">
+
+    <!-- Animated Gradient Background 1 -->
+    <View
+        android:id="@+id/gradient1"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_gravity="bottom|start"
+        android:layout_marginStart="20dp"
+        android:layout_marginBottom="100dp"
+        android:translationY="@dimen/_50sdp"
+        android:background="@drawable/gradient_purple_pink" />
+
+    <!-- Animated Gradient Background 2 -->
+    <View
+        android:id="@+id/gradient2"
+        android:layout_width="180dp"
+        android:layout_height="180dp"
+        android:translationY="@dimen/_55sdp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="30dp"
+        android:layout_marginBottom="120dp"
+        android:background="@drawable/gradient_blue_cyan" />
+
+    <!-- Animated Gradient Background 3 -->
+    <View
+        android:id="@+id/gradient3"
+        android:layout_width="150dp"
+        android:translationY="@dimen/_55sdp"
+        android:layout_height="150dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="90dp"
+        android:background="@drawable/gradient_orange_red" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingBottom="120dp">
+
+        <LinearLayout
+            android:id="@+id/xmlDemoContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="NavigationBar XML Demo"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="This NavigationBar is configured entirely in XML!"
+                android:textSize="14sp"
+                android:gravity="center"
+                android:layout_marginBottom="24dp" />
+
+            <TextView
+                android:id="@+id/xmlStatusText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Tap a tab below"
+                android:textSize="16sp"
+                android:gravity="center"
+                android:padding="16dp"
+                android:background="#40CDDC39"
+                android:layout_marginBottom="16dp" />
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- NavigationBar configured via XML with menu -->
+    <xyz.demo.myblurlibrary.NavigationBar
+        android:id="@+id/navigationBarXml"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:translationY="-30dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_margin="16dp"
+        app:menu="@menu/navbar_tabs" />
+
+</FrameLayout>

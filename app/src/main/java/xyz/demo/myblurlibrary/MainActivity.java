@@ -30,8 +30,15 @@ public class MainActivity extends Activity {
             startActivity(new Intent(this, NavDemoActivity.class));
         });
         
+        Button xmlButton = new Button(this);
+        xmlButton.setText("Open XML Demo");
+        xmlButton.setOnClickListener(v -> {
+            startActivity(new Intent(this, XmlDemoActivity.class));
+        });
+        
         layout.addView(button);
         layout.addView(navButton);
+        layout.addView(xmlButton);
         setContentView(layout);
     }
 }
