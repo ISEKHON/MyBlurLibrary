@@ -15,6 +15,8 @@ import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 
+import xyz.code.navigationbar.NavigationBar;
+
 /**
  * Demo Music Activity showcasing NavigationBar in a music app context
  */

@@ -34,6 +34,7 @@ android {
 
 dependencies {
     implementation(project(":Blur3"))
+    implementation(project(":NavigationBar"))
     implementation("com.intuit.sdp:sdp-android:1.1.1")
     
     implementation(libs.appcompat)

@@ -22,4 +22,5 @@ dependencyResolutionManagement {
 rootProject.name = "MyBlurLibrary"
 include(":app")
 include(":Blur3")
+include(":NavigationBar")
  

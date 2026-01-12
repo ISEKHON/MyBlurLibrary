@@ -1,4 +1,4 @@
-package xyz.demo.myblurlibrary;
+package xyz.code.navigationbar;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -186,6 +186,21 @@ public class NavigationBar extends FrameLayout {
         }
         
         super.dispatchDraw(canvas);
+        
+        // Always draw stroke around navbar for separation
+        if (backgroundColor == 0x00000000) { // Only when transparent (in container)
+            canvas.save();
+            android.graphics.Path strokePath = new android.graphics.Path();
+            android.graphics.RectF strokeRect = new android.graphics.RectF(0, 0, getWidth(), getHeight());
+            strokePath.addRoundRect(strokeRect, radii, android.graphics.Path.Direction.CW);
+            
+            xyz.code.blur3.drawable.BlurredBackgroundDrawable.drawStroke(
+                canvas, 0, 0, getWidth(), getHeight(), radii,
+                dpf(1), true, paintStrokeTop
+            );
+            
+            canvas.restore();
+        }
     }
     
     @RequiresApi(api = Build.VERSION_CODES.S)

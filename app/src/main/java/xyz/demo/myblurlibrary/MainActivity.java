@@ -42,10 +42,17 @@ public class MainActivity extends Activity {
             startActivity(new Intent(this, DemoMusicActivity.class));
         });
         
+        Button gradientButton = new Button(this);
+        gradientButton.setText("Open Animated Gradient Demo");
+        gradientButton.setOnClickListener(v -> {
+            startActivity(new Intent(this, AnimatedGradientActivity.class));
+        });
+        
         layout.addView(button);
         layout.addView(navButton);
         layout.addView(xmlButton);
         layout.addView(musicButton);
+        layout.addView(gradientButton);
         setContentView(layout);
     }
 }

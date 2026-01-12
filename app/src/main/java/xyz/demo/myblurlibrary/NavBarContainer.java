@@ -11,6 +11,7 @@ import android.widget.LinearLayout;
 import androidx.annotation.RequiresApi;
 
 import xyz.code.blur3.DownscaleScrollableNoiseSuppressor;
+import xyz.code.navigationbar.NavigationBar;
 
 /**
  * Container that holds both MiniPlayer and NavigationBar with unified blur effect
@@ -92,41 +93,87 @@ public class NavBarContainer extends FrameLayout {
     public void showMiniPlayer() {
         if (miniPlayer == null || miniPlayer.getParent() != null) return;
         
-        // Add mini player to top of container
-        contentContainer.addView(miniPlayer, 0, new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        ));
+        // Measure mini player height before adding
+        miniPlayer.measure(
+            MeasureSpec.makeMeasureSpec(getWidth(), MeasureSpec.EXACTLY),
+            MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED)
+        );
+        final int targetHeight = miniPlayer.getMeasuredHeight();
         
-        // Animate mini player slide in
+        // Add mini player to top of container with 0 height initially
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            0
+        );
+        contentContainer.addView(miniPlayer, 0, params);
+        
+        // Animate height expansion
+        android.animation.ValueAnimator heightAnimator = android.animation.ValueAnimator.ofInt(0, targetHeight);
+        heightAnimator.setDuration(350);
+        heightAnimator.setInterpolator(new android.view.animation.DecelerateInterpolator(1.5f));
+        heightAnimator.addUpdateListener(animation -> {
+            params.height = (int) animation.getAnimatedValue();
+            miniPlayer.setLayoutParams(params);
+            
+            // Update blur during animation to prevent glitches
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && noiseSuppressor != null) {
+                noiseSuppressor.setupRenderNodes(new java.util.ArrayList<>(), 0);
+                invalidate();
+            }
+        });
+        
+        // Fade in mini player
         miniPlayer.setAlpha(0f);
-        miniPlayer.setTranslationY(-dp(20));
         miniPlayer.animate()
             .alpha(1f)
-            .translationY(0)
             .setDuration(300)
-            .setInterpolator(new android.view.animation.DecelerateInterpolator())
+            .setStartDelay(50)
+            .setInterpolator(new android.view.animation.LinearInterpolator())
             .start();
+        
+        heightAnimator.start();
         
         // Reset blur for expanded container
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && noiseSuppressor != null) {
-            post(() -> {
+            postDelayed(() -> {
                 noiseSuppressor.setupRenderNodes(new java.util.ArrayList<>(), 0);
                 invalidate();
-            });
+            }, 100);
         }
     }
     
     public void hideMiniPlayer() {
         if (miniPlayer == null || miniPlayer.getParent() == null) return;
         
+        final int startHeight = miniPlayer.getHeight();
+        final LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) miniPlayer.getLayoutParams();
+        
+        // Fade out mini player
         miniPlayer.animate()
             .alpha(0f)
-            .translationY(-dp(20))
-            .setDuration(300)
-            .setInterpolator(new android.view.animation.AccelerateInterpolator())
-            .withEndAction(() -> {
+            .setDuration(250)
+            .setInterpolator(new android.view.animation.LinearInterpolator())
+            .start();
+        
+        // Animate height collapse
+        android.animation.ValueAnimator heightAnimator = android.animation.ValueAnimator.ofInt(startHeight, 0);
+        heightAnimator.setDuration(350);
+        heightAnimator.setInterpolator(new android.view.animation.AccelerateInterpolator(1.5f));
+        heightAnimator.addUpdateListener(animation -> {
+            params.height = (int) animation.getAnimatedValue();
+            miniPlayer.setLayoutParams(params);
+            
+            // Update blur during animation to prevent glitches
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && noiseSuppressor != null) {
+                noiseSuppressor.setupRenderNodes(new java.util.ArrayList<>(), 0);
+                invalidate();
+            }
+        });
+        heightAnimator.addListener(new android.animation.AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(android.animation.Animator animation) {
                 contentContainer.removeView(miniPlayer);
+                miniPlayer.setAlpha(1f); // Reset alpha for next show
                 // Reset blur after hiding
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && noiseSuppressor != null) {
                     post(() -> {
@@ -134,8 +181,10 @@ public class NavBarContainer extends FrameLayout {
                         invalidate();
                     });
                 }
-            })
-            .start();
+            }
+        });
+        
+        heightAnimator.start();
     }
     
     public boolean isMiniPlayerVisible() {

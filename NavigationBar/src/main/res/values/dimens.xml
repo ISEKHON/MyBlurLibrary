@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- NavigationBar Dimensions -->
+    <dimen name="navbar_tab_icon_size">@dimen/_48sdp</dimen>
+    <dimen name="navbar_tab_icon_padding">@dimen/_10sdp</dimen>
+    <dimen name="navbar_tab_circular_radius">@dimen/_24sdp</dimen>
+    <dimen name="navbar_padding_horizontal">@dimen/_8sdp</dimen>
+    <dimen name="navbar_padding_vertical">@dimen/_6sdp</dimen>
+    <dimen name="navbar_tab_margin">@dimen/_2sdp</dimen>
+    <dimen name="navbar_corner_radius_pill">@dimen/_100sdp</dimen>
+    <dimen name="navbar_stroke_width_top">@dimen/_1sdp</dimen>
+    <dimen name="navbar_stroke_width_bottom">@dimen/_1sdp</dimen>
+
+    <!-- Badge Dimensions -->
+    <dimen name="badge_min_size">@dimen/_18sdp</dimen>
+    <dimen name="badge_padding_horizontal">@dimen/_4sdp</dimen>
+    <dimen name="badge_padding_vertical">@dimen/_2sdp</dimen>
+    <dimen name="badge_corner_radius">@dimen/_9sdp</dimen>
+    <dimen name="badge_margin_top">@dimen/_4sdp</dimen>
+    <dimen name="badge_margin_end">@dimen/_4sdp</dimen>
+    <dimen name="badge_text_size">@dimen/_10sdp</dimen>
+</resources>

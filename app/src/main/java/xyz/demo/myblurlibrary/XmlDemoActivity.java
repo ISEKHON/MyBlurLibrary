@@ -9,6 +9,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
+import xyz.code.navigationbar.NavigationBar;
+
 public class XmlDemoActivity extends AppCompatActivity {
 
     private NavigationBar navigationBar;

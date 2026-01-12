@@ -15,6 +15,8 @@ import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 
+import xyz.code.navigationbar.NavigationBar;
+
 /**
  * Demo Activity showcasing NavigationBar component with all features
  */

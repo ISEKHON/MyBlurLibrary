@@ -81,7 +81,7 @@
     </ScrollView>
 
     <!-- NavigationBar configured via XML with menu -->
-    <xyz.demo.myblurlibrary.NavigationBar
+    <xyz.code.navigationbar.NavigationBar
         android:id="@+id/navigationBarXml"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
